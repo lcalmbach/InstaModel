@@ -21,7 +21,7 @@ __author_email__ = "lcalmbach@gmail.com"
 VERSION_DATE = "2024-08-27"
 APP_NAME = "InstaModel"
 GIT_REPO = "https://github.com/lcalmbach/insta-model"
-
+APP_ICON = "🧠"
 menu_options = [
     "About",
     "Select/Create Model",
@@ -41,25 +41,26 @@ APP_INFO = f"""<div style="background-color:#34282C; padding: 10px;border-radius
 def init():
     st.set_page_config(
         page_title=APP_NAME,
-        page_icon="🧠",
+        page_icon=APP_ICON,
         layout="wide",
         initial_sidebar_state="expanded",
     )
 
 def main():
+    init()
     if 'model' not in st.session_state:
         with open('./projects.json', 'r') as file:
             st.session_state.projects_dict = json.load(file)
         st.session_state.model = Model(st.session_state.projects_dict['cities'])
     
-    init()
+    
     
     if "keywords" not in st.session_state:
         st.session_state.keywords = []
         st.session_state.image_dict = {}
 
     with st.sidebar:
-        st.sidebar.title(f"{APP_NAME} 🔦")
+        st.sidebar.title(f"{APP_NAME} {APP_ICON}")
         menu_action = option_menu(
             None,
             menu_options,

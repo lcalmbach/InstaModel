@@ -1,7 +1,7 @@
 import streamlit as st
 import fastai.vision.all as fava
 from pathlib import Path
-import shutil
+import shutil, os
 import json
 
 class Model:
@@ -66,14 +66,22 @@ class Model:
             json.dump(st.session_state.projects_dict, f)
 
     def load_images(self):
-        st.write(self.model_root)
-        self.dls = fava.ImageDataLoaders.from_folder(
-            self.model_root,
-            train='.',
-            valid_pct=0.2,
-            item_tfms=fava.Resize(224),
-            batch_tfms=fava.aug_transforms(size=224)
-        )
+        def are_folders_empty(root):
+            # Check if there are any files in the directory or its subdirectories
+            for subdir in os.listdir(root):
+                subdir_path = os.path.join(root, subdir)
+                if os.path.isdir(subdir_path) and os.listdir(subdir_path):
+                    return False  # Found a non-empty folder
+            return True  
+        
+        if not are_folders_empty(self.model_root):
+            self.dls = fava.ImageDataLoaders.from_folder(
+                self.model_root,
+                train='.',
+                valid_pct=0.2,
+                item_tfms=fava.Resize(224),
+                batch_tfms=fava.aug_transforms(size=224)
+            )
     
     def train_model(self):
         learn = fava.cnn_learner(self.dls, fava.resnet34, metrics=fava.accuracy)
