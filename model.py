@@ -1,32 +1,87 @@
-from fastai.vision.all import *
-import pathlib
 import streamlit as st
-import os
+import fastai.vision.all as fava
+from pathlib import Path
+import shutil
+import json
 
 class Model:
-    def __init__(self, image_path, theme):
-        self.image_path = image_path
-        self.theme = theme.replace(" ", "_").lower()
-        self.model_path = pathlib.Path(f'./{self.theme}.pkl')
+    def __init__(self, project: dict):
+        print(project)
+        self.key = project['key']
+        self.title = project['title']
+        self.description = project['description']
+        self.categories = project['categories']
+        self.default = project['default']
+        self.new = project['new']
+        self.model_root = Path(f'./data/{self.key}')
+        self.model_root.parent.mkdir(parents=True, exist_ok=True)
+        self.model_path = Path(f'./data/{self.key}/export.pkl')
+        self.synch_folders()
+        self.load_images()
+    
+    @property
+    def settings(self):
+        return {
+            'title': self.title,
+            'description': self.description,
+            'categories': self.categories,
+            'image_number': self.image_number,
+            'default': self.default,
+            'new': self.new
+        }
+
+    @settings.setter
+    def settings(self, settings):
+        self.title = settings['title']
+        self.description = settings['description']
+        self.categories = settings['categories']
+        self.image_number = settings['image_number']
+        self.default = settings['default']
+        self.new = settings['new']
+    
+    @settings.getter
+    def settings(self):
+        return {
+            'title': self.title,
+            'description': self.description,
+            'categories': self.categories,
+            'image_number': self.image_number,
+            'default': self.default,
+            'new': self.new
+        }
+    
+    def synch_folders(self):
+        for cat in self.categories:
+            (self.model_root/cat.lower()).mkdir(parents=True, exist_ok=True)
         
-        # Ensure the model directory exists
-        self.model_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        self.dls = ImageDataLoaders.from_folder(
-            self.image_path,
+        # delete folders that are not a category
+        folders = [f for f in self.model_root.iterdir() if f.is_dir()]
+        for folder in folders:
+            st.write(folder)
+            if folder.name not in [x.lower() for x in self.categories]:
+                shutil.rmtree(folder)
+    
+    def save():
+        with open('./projects.json', 'w') as f:
+            json.dump(st.session_state.projects_dict, f)
+
+    def load_images(self):
+        st.write(self.model_root)
+        self.dls = fava.ImageDataLoaders.from_folder(
+            self.model_root,
             train='.',
             valid_pct=0.2,
-            item_tfms=Resize(224),
-            batch_tfms=aug_transforms(size=224)
+            item_tfms=fava.Resize(224),
+            batch_tfms=fava.aug_transforms(size=224)
         )
     
     def train_model(self):
-        learn = cnn_learner(self.dls, resnet34, metrics=accuracy)
+        learn = fava.cnn_learner(self.dls, fava.resnet34, metrics=fava.accuracy)
         learn.fine_tune(4)
         learn.export(self.model_path)
     
     def model_predict(self, file_path):
-        learn_inf = load_learner(pathlib.Path('./data/cities.pkl'))
-        img = PILImage.create(file_path)
+        learn_inf = fava.load_learner(self.model_path)
+        img = fava.PILImage.create(file_path)
         self.pred, self.pred_idx, self.probs = learn_inf.predict(img)
         

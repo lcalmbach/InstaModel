@@ -1,0 +1,15 @@
+{
+    "cities": {
+        "key": "cities",
+        "title": "Cities",
+        "description": "Recognize city images from Basel, Berlin, Bern",
+        "categories": [
+            "Basel",
+            "Berlin",
+            "Bern"
+        ],
+        "image_number": 10,
+        "new": false,
+        "default": true
+    }
+}
